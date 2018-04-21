@@ -45,6 +45,36 @@ class NN(object):
 
         self.model = Model(inputs=Xin, outputs=out)
 
+    def CNN_NOPOOL(self, h, d, classes):
+        '''
+        Initializes the convolutional neural network model for MNIST database.
+        Args:
+            h: height of the picture in pixels
+            d: depth of the picture in pixels
+            classes: no of classes
+
+        '''
+        Xin = Input(shape=(h, d, 1))
+
+        X = Conv2D(2, (3, 3), strides=1, padding='same', activation='relu')(Xin)
+
+        X = Conv2D(4, (3, 3), strides=1, padding='same', activation='relu')(X)
+
+        X = Conv2D(8, (3, 3), strides=1, padding='same', activation='relu')(X)
+
+        X = Conv2D(8, (4, 4), strides=2, padding='valid', activation='relu')(X)
+
+        X = Conv2D(8, (4, 4), strides=2, padding='valid', activation='relu')(X)
+
+        X = Flatten()(X)
+        X = Dense(128, activation='tanh')(X)
+
+        X = Dense(classes, activation='softmax')(X)
+
+        out = X
+
+        self.model = Model(inputs=Xin, outputs=out)
+
     def DNN(self, h, d, classes):
         '''
         Initializes the deep neural network model for MNIST database.
@@ -75,7 +105,7 @@ class NN(object):
         m, h, d, _ = X.shape
         m, classes = Yoh.shape
 
-        self.CNN(h, d, classes)
+        self.CNN_NOPOOL(h, d, classes)
 
         self.model.compile(loss='categorical_crossentropy', optimizer='Adam', metrics=['accuracy'])
 
@@ -96,3 +126,6 @@ def main():
     model.model.evaluate(test_images, test_labels_oh)
 
     return model
+
+if __name__ == '__main__':
+    main()
