@@ -7,28 +7,38 @@ from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Conv2DTranspose, Res
 import numpy as np
 import mnist_data
 
+
 class Generator(object):
     '''
 
     '''
+
     def __init__(self, h, d, classes):
         self.trainable = True
 
-        g_1 = Dense(128, activation='tanh', trainable=self.trainable, input_shape=(classes,))
+        g_1 = Dense(100, activation='relu', trainable=self.trainable, input_shape=(classes,))
 
-        g_2 = Dense(200, activation='tanh', trainable=self.trainable)
+        g_2 = BatchNormalization()
 
-        g_3 = Reshape(target_shape=(5, 5, 8))
+        g_3 = Dense(4096, activation='relu', trainable=self.trainable)
 
-        g_4 = Conv2DTranspose(8, (5, 5), strides=2, activation='tanh', trainable=self.trainable)
+        g_4 = BatchNormalization()
 
-        g_5 = Conv2DTranspose(8, (4, 4), strides=2, activation='tanh', padding='valid', trainable=self.trainable)
+        g_5 = Reshape(target_shape=(2, 2, 1024))
 
-        g_6 = Conv2DTranspose(4, (4, 4), strides=1, activation='tanh', padding='same', trainable=self.trainable)
+        g_6 = Conv2DTranspose(512, (3, 3), strides=2, activation='relu', padding='valid', trainable=self.trainable)
 
-        g_7 = Conv2DTranspose(2, (4, 4), strides=1, activation='tanh', padding='same', trainable=self.trainable)
+        g_7 = BatchNormalization()
 
-        g_8 = Conv2DTranspose(1, (4, 4), strides=1, activation='tanh', padding='same', trainable=self.trainable)
+        g_8 = Conv2DTranspose(256, (3, 3), strides=1, activation='relu', padding='valid', trainable=self.trainable)
+
+        g_9 = BatchNormalization()
+
+        g_10 = Conv2DTranspose(128, (4, 4), strides=2, activation='relu', padding='same', trainable=self.trainable)
+
+        g_11 = BatchNormalization()
+
+        g_12 = Conv2DTranspose(1, (4, 4), strides=2, activation='tanh', padding='same', trainable=self.trainable)
 
         self.model = Sequential([
 
@@ -40,6 +50,11 @@ class Generator(object):
             g_6,
             g_7,
             g_8,
+            g_9,
+            g_10,
+            g_11,
+            g_12
+
         ])
 
     def frozen_model(self):
