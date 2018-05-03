@@ -2,9 +2,10 @@
 # Copyright 2018 Chidambaram Periakaruppan
 
 
-from keras import Input, Model, Sequential
-from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Conv2DTranspose, Reshape, BatchNormalization
 import numpy as np
+from keras import Input, Model, Sequential
+from keras.layers import Conv2D, Dense, Flatten, Conv2DTranspose, Reshape, BatchNormalization, Activation
+
 import mnist_data
 
 
@@ -16,29 +17,40 @@ class Generator(object):
     def __init__(self, h, d, classes):
         self.trainable = True
 
-        g_1 = Dense(100, activation='relu', trainable=self.trainable, input_shape=(classes,))
+        g_1 = Dense(100, input_shape=(classes,), name='G_0_1')
 
         g_2 = BatchNormalization()
 
-        g_3 = Dense(4096, activation='relu', trainable=self.trainable)
+        g_3 = Activation(activation='relu')
 
-        g_4 = BatchNormalization()
+        g_4 = Dense(128)
 
-        g_5 = Reshape(target_shape=(2, 2, 1024))
+        g_5 = BatchNormalization()
 
-        g_6 = Conv2DTranspose(512, (3, 3), strides=2, activation='relu', padding='valid', trainable=self.trainable)
+        g_6 = Activation(activation='relu')
 
-        g_7 = BatchNormalization()
+        g_7 = Reshape(target_shape=(2, 2, 32))
 
-        g_8 = Conv2DTranspose(256, (3, 3), strides=1, activation='relu', padding='valid', trainable=self.trainable)
+        g_8 = Conv2DTranspose(16, (3, 3), strides=2
+        padding = 'valid')
 
         g_9 = BatchNormalization()
 
-        g_10 = Conv2DTranspose(128, (4, 4), strides=2, activation='relu', padding='same', trainable=self.trainable)
+        g_10 = Activation(activation='relu')
 
-        g_11 = BatchNormalization()
+        g_11 = Conv2DTranspose(8, (3, 3), strides=1, padding='valid')
 
-        g_12 = Conv2DTranspose(1, (4, 4), strides=2, activation='tanh', padding='same', trainable=self.trainable)
+        g_12 = BatchNormalization()
+
+        g_13 = Activation(activation='relu')
+
+        g_14 = Conv2DTranspose(4, (4, 4), strides=2, padding='same')
+
+        g_15 = BatchNormalization()
+
+        g_16 = Activation(activation='relu')
+
+        g_17 = Conv2DTranspose(1, (4, 4), strides=2, activation='tanh', padding='same')
 
         self.model = Sequential([
 
@@ -53,63 +65,39 @@ class Generator(object):
             g_9,
             g_10,
             g_11,
-            g_12
+            g_12,
+            g_13,
+            g_14,
+            g_15,
+            g_16,
+            g_17,
 
         ])
 
-    def frozen_model(self):
-        self.trainable = False
-        self.model.layers[0].trainable = self.trainable
-        self.model.layers[1].trainable = self.trainable
-        self.model.layers[2].trainable = self.trainable
-        self.model.layers[3].trainable = self.trainable
-        self.model.layers[4].trainable = self.trainable
-        self.model.layers[5].trainable = self.trainable
-        self.model.layers[6].trainable = self.trainable
-        self.model.layers[7].trainable = self.trainable
-        self.model.layers[8].trainable = self.trainable
-        self.model.layers[9].trainable = self.trainable
-        self.model.layers[10].trainable = self.trainable
-        self.model.layers[11].trainable = self.trainable
-
-    def trainable_model(self):
-        self.trainable = True
-        self.model.layers[0].trainable = self.trainable
-        self.model.layers[1].trainable = self.trainable
-        self.model.layers[2].trainable = self.trainable
-        self.model.layers[3].trainable = self.trainable
-        self.model.layers[4].trainable = self.trainable
-        self.model.layers[5].trainable = self.trainable
-        self.model.layers[6].trainable = self.trainable
-        self.model.layers[7].trainable = self.trainable
-        self.model.layers[8].trainable = self.trainable
-        self.model.layers[9].trainable = self.trainable
-        self.model.layers[10].trainable = self.trainable
-        self.model.layers[11].trainable = self.trainable
 
 
 class Discriminator(object):
     def __init__(self, h, d, classes):
-        self.trainable = True
+
         #         d_0 = Input(shape=(h, d, 1))
 
-        d_1 = Conv2D(128, (4, 4), strides=2, padding='same', activation='relu', trainable=self.trainable,
+        d_1 = Conv2D(128, (4, 4), strides=2, padding='same',
                      input_shape=(h, d, 1))
         d_2 = BatchNormalization()
-
-        d_3 = Conv2D(256, (4, 4), strides=2, padding='same', activation='relu', trainable=self.trainable)
-        d_4 = BatchNormalization()
-
-        d_5 = Conv2D(512, (3, 3), strides=1, padding='valid', activation='relu', trainable=self.trainable)
-        d_6 = BatchNormalization()
-
-        d_7 = Conv2D(1024, (3, 3), strides=2, padding='valid', activation='relu', trainable=self.trainable)
+        d_3 = Activation(activation='relu')
+        d_4 = Conv2D(256, (4, 4), strides=2, padding='same')
+        d_5 = BatchNormalization()
+        d_6 = Activation(activation='relu')
+        d_7 = Conv2D(512, (3, 3), strides=1, padding='valid')
         d_8 = BatchNormalization()
-
-        d_9 = Flatten()
-        d_10 = Dense(100, activation='relu', trainable=self.trainable)
-
-        d_11 = Dense(classes, activation='softmax', trainable=self.trainable)
+        d_9 = Activation(activation='relu')
+        d_10 = Conv2D(1024, (3, 3), strides=2, padding='valid')
+        d_11 = BatchNormalization()
+        d_12 = Activation(activation='relu')
+        d_13 = Flatten()
+        d_14 = Dense(100)
+        d_15 = Activation(activation='relu')
+        d_16 = Dense(classes, activation='softmax')
 
 
 
@@ -126,64 +114,15 @@ class Discriminator(object):
             d_9,
             d_10,
             d_11,
+            d_12,
+            d_13,
+            d_14,
+            d_15,
+            d_16,
 
         ])
 
-    #         d_1 = Conv2D(2, (3, 3), strides=1, padding='same', activation='relu', trainable = self.trainable,input_shape=(h, d, 1))
 
-    #         d_2 = Conv2D(4, (3, 3), strides=1, padding='same', activation='relu', trainable = self.trainable)
-
-    #         d_3 = Conv2D(8, (3, 3), strides=1, padding='same', activation='relu', trainable = self.trainable)
-
-    #         d_4 = Conv2D(8, (4, 4), strides=2, padding='valid', activation='relu', trainable = self.trainable)
-
-    #         d_5 = Conv2D(8, (4, 4), strides=2, padding='valid', activation='relu', trainable = self.trainable)
-
-    #         d_6 = Flatten()
-    #         d_7 = Dense(128, activation='tanh', trainable = self.trainable)
-
-    #         d_8 = Dense(classes, activation='softmax', trainable = self.trainable)
-
-    #         self.model = Sequential([
-    # #             d_0,
-    #             d_1,
-    #             d_2,
-    #             d_3,
-    #             d_4,
-    #             d_5,
-    #             d_6,
-    #             d_7,
-    #             d_8,
-    #         ])
-
-    def frozen_model(self):
-        self.trainable = False
-        self.model.layers[0].trainable = self.trainable
-        self.model.layers[1].trainable = self.trainable
-        self.model.layers[2].trainable = self.trainable
-        self.model.layers[3].trainable = self.trainable
-        self.model.layers[4].trainable = self.trainable
-        self.model.layers[5].trainable = self.trainable
-        self.model.layers[6].trainable = self.trainable
-        self.model.layers[7].trainable = self.trainable
-        self.model.layers[8].trainable = self.trainable
-        self.model.layers[9].trainable = self.trainable
-        self.model.layers[10].trainable = self.trainable
-
-
-    def trainable_model(self):
-        self.trainable = True
-        self.model.layers[0].trainable = self.trainable
-        self.model.layers[1].trainable = self.trainable
-        self.model.layers[2].trainable = self.trainable
-        self.model.layers[3].trainable = self.trainable
-        self.model.layers[4].trainable = self.trainable
-        self.model.layers[5].trainable = self.trainable
-        self.model.layers[6].trainable = self.trainable
-        self.model.layers[7].trainable = self.trainable
-        self.model.layers[8].trainable = self.trainable
-        self.model.layers[9].trainable = self.trainable
-        self.model.layers[10].trainable = self.trainable
 
 
 class GAN(object):
@@ -200,12 +139,12 @@ class GAN(object):
         act_X = self.discriminator.model(actual_data)
         act_out = act_X
 
-        self.generator.frozen_model()
-        self.discriminator.trainable_model()
+        self.generator.model.trainable = False
+        self.discriminator.model.trainable = True
         self.discriminator_trainer = Model(inputs=[generated_data, actual_data], outputs=[gen_out, act_out])
         self.discriminator_trainer.compile(loss=loss, optimizer=optimizer, metrics=metrics)
-        self.generator.trainable_model()
-        self.discriminator.frozen_model()
+        self.generator.model.trainable = True
+        self.discriminator.model.trainable = False
         self.generator_trainer = Model(inputs=[generated_data], outputs=[gen_out])
         self.generator_trainer.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
