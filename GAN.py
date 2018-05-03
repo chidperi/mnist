@@ -3,7 +3,7 @@
 
 
 from keras import Input, Model, Sequential
-from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Conv2DTranspose, Reshape
+from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Conv2DTranspose, Reshape, BatchNormalization
 import numpy as np
 import mnist_data
 
@@ -67,6 +67,10 @@ class Generator(object):
         self.model.layers[5].trainable = self.trainable
         self.model.layers[6].trainable = self.trainable
         self.model.layers[7].trainable = self.trainable
+        self.model.layers[8].trainable = self.trainable
+        self.model.layers[9].trainable = self.trainable
+        self.model.layers[10].trainable = self.trainable
+        self.model.layers[11].trainable = self.trainable
 
     def trainable_model(self):
         self.trainable = True
@@ -78,6 +82,10 @@ class Generator(object):
         self.model.layers[5].trainable = self.trainable
         self.model.layers[6].trainable = self.trainable
         self.model.layers[7].trainable = self.trainable
+        self.model.layers[8].trainable = self.trainable
+        self.model.layers[9].trainable = self.trainable
+        self.model.layers[10].trainable = self.trainable
+        self.model.layers[11].trainable = self.trainable
 
 
 class Discriminator(object):
@@ -85,26 +93,25 @@ class Discriminator(object):
         self.trainable = True
         #         d_0 = Input(shape=(h, d, 1))
 
-        d_1 = Conv2D(2, (3, 3), strides=1, padding='same', activation='relu', trainable=self.trainable,
+        d_1 = Conv2D(128, (4, 4), strides=2, padding='same', activation='relu', trainable=self.trainable,
                      input_shape=(h, d, 1))
-        d_2 = MaxPool2D(pool_size=(2, 2), strides=1, padding='same')
+        d_2 = BatchNormalization()
 
-        d_3 = Conv2D(4, (3, 3), strides=1, padding='same', activation='relu', trainable=self.trainable)
-        d_4 = MaxPool2D(pool_size=(2, 2), strides=1, padding='same')
+        d_3 = Conv2D(256, (4, 4), strides=2, padding='same', activation='relu', trainable=self.trainable)
+        d_4 = BatchNormalization()
 
-        d_5 = Conv2D(8, (3, 3), strides=1, padding='same', activation='relu', trainable=self.trainable)
-        d_6 = MaxPool2D(pool_size=(2, 2), strides=1, padding='same')
+        d_5 = Conv2D(512, (3, 3), strides=1, padding='valid', activation='relu', trainable=self.trainable)
+        d_6 = BatchNormalization()
 
-        d_7 = Conv2D(8, (3, 3), strides=1, padding='same', activation='relu', trainable=self.trainable)
-        d_8 = MaxPool2D(pool_size=(2, 2), strides=2, padding='same')
+        d_7 = Conv2D(1024, (3, 3), strides=2, padding='valid', activation='relu', trainable=self.trainable)
+        d_8 = BatchNormalization()
 
-        d_9 = Conv2D(8, (3, 3), strides=1, padding='same', activation='relu', trainable=self.trainable)
-        d_10 = MaxPool2D(pool_size=(2, 2), strides=2, padding='same')
+        d_9 = Flatten()
+        d_10 = Dense(100, activation='relu', trainable=self.trainable)
 
-        d_11 = Flatten()
-        d_12 = Dense(128, activation='tanh', trainable=self.trainable)
+        d_11 = Dense(classes, activation='softmax', trainable=self.trainable)
 
-        d_13 = Dense(classes, activation='softmax', trainable=self.trainable)
+
 
         self.model = Sequential([
 
@@ -119,8 +126,7 @@ class Discriminator(object):
             d_9,
             d_10,
             d_11,
-            d_12,
-            d_13
+
         ])
 
     #         d_1 = Conv2D(2, (3, 3), strides=1, padding='same', activation='relu', trainable = self.trainable,input_shape=(h, d, 1))
@@ -163,8 +169,7 @@ class Discriminator(object):
         self.model.layers[8].trainable = self.trainable
         self.model.layers[9].trainable = self.trainable
         self.model.layers[10].trainable = self.trainable
-        self.model.layers[11].trainable = self.trainable
-        self.model.layers[12].trainable = self.trainable
+
 
     def trainable_model(self):
         self.trainable = True
@@ -179,8 +184,6 @@ class Discriminator(object):
         self.model.layers[8].trainable = self.trainable
         self.model.layers[9].trainable = self.trainable
         self.model.layers[10].trainable = self.trainable
-        self.model.layers[11].trainable = self.trainable
-        self.model.layers[12].trainable = self.trainable
 
 
 class GAN(object):
@@ -212,7 +215,7 @@ class GAN(object):
 
         samples = softmax_noise.shape[0]
         random = list(range(samples))
-        np.random.shuffle(random)
+        random = np.random.shuffle(random)
         for i in range(samples):
 
             random_batch = random[i:(i + 1)]
@@ -226,7 +229,7 @@ class GAN(object):
                                                    y=[generator_training_labels_oh[random_batch_gen]])
             if i % 1000 == 0:
                 print('iteration %s' % i)
-                # self.get_generator_prediction(softmax_noise, np.random.randint(60000))
+                self.get_generator_prediction(softmax_noise, np.random.randint(60000))
 
 
     def evaluate(self, test_images, test_labels_oh):
@@ -270,22 +273,21 @@ def generate_noise(samples, classes):
 
 
 
-def generate_image_labels(gan, softmax_noise):
+def generate_labels(softmax_noise):
     '''
     Producers an array of images generated by the Generator from the softmax_noise.
     Args:
-        gan(Model): A keras Model
         softmax_noise(np.array): an of softmax outputs.
 
     Returns:
 
     '''
-    gan.generator.model.compile(optimizer='Adam',loss='categorical_crossentropy')
-    generator_images = gan.generator.model.predict(softmax_noise)
+    # gan.generator.model.compile(optimizer='Adam',loss='categorical_crossentropy')
+    # generator_images = gan.generator.model.predict(softmax_noise)
     generator_labels=np.argmax(softmax_noise, axis=1).reshape(-1,1)
-    generator_images = mnist_data.X_denormalize(generator_images)
+    # generator_images = mnist_data.X_denormalize(generator_images)
 
-    return generator_images, generator_labels
+    return generator_labels
 
 
 def get_gan_onehot(test_labels, training_labels, generator_labels, classes):
@@ -348,7 +350,7 @@ def main():
 
     model = GAN(28, 28, 10)
     softmax_noise = generate_noise(60000, 10)
-    generator_images, generator_labels = generate_image_labels(model, softmax_noise)
+    generator_labels = generate_labels(softmax_noise)
     test_labels_oh, training_labels_oh, generator_training_labels_oh, discriminator_training_labels_oh = get_gan_onehot(
         test_labels, training_labels, generator_labels, 10)
 
