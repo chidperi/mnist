@@ -5,7 +5,7 @@
 import numpy as np
 from keras import Input, Model, Sequential
 from keras.layers import Conv2D, Dense, Flatten, Conv2DTranspose, Reshape, BatchNormalization, Activation
-
+from keras.layers import LeakyReLU
 import mnist_data
 
 
@@ -15,36 +15,35 @@ class Generator(object):
     '''
 
     def __init__(self, h, d, classes):
-        self.trainable = True
 
-        g_1 = Dense(100, input_shape=(classes,), name='G_0_1')
 
-        g_2 = BatchNormalization()
+        g_1 = Dense(2048, input_shape=(classes,), name='G_0_1')
 
-        g_3 = Activation(activation='relu')
+#         g_2 = BatchNormalization()
 
-        g_4 = Dense(128)
+#         g_3 = Activation(activation='relu')
 
-        g_5 = BatchNormalization()
+#         g_4 = Dense(128)
 
-        g_6 = Activation(activation='relu')
+# #         g_5 = BatchNormalization()
 
-        g_7 = Reshape(target_shape=(2, 2, 32))
+#         g_6 = Activation(activation='relu')
 
-        g_8 = Conv2DTranspose(16, (3, 3), strides=2
-        padding = 'valid')
+        g_7 = Reshape(target_shape=(2, 2, 512))
+
+        g_8 = Conv2DTranspose(256, (3, 3), strides=2, padding = 'valid')
 
         g_9 = BatchNormalization()
 
         g_10 = Activation(activation='relu')
 
-        g_11 = Conv2DTranspose(8, (3, 3), strides=1, padding='valid')
+        g_11 = Conv2DTranspose(128, (3, 3), strides=1, padding='valid')
 
         g_12 = BatchNormalization()
 
         g_13 = Activation(activation='relu')
 
-        g_14 = Conv2DTranspose(4, (4, 4), strides=2, padding='same')
+        g_14 = Conv2DTranspose(64, (4, 4), strides=2, padding='same')
 
         g_15 = BatchNormalization()
 
@@ -55,11 +54,11 @@ class Generator(object):
         self.model = Sequential([
 
             g_1,
-            g_2,
-            g_3,
-            g_4,
-            g_5,
-            g_6,
+# #             g_2,
+#             g_3,
+#             g_4,
+# #             g_5,
+#             g_6,
             g_7,
             g_8,
             g_9,
@@ -79,24 +78,24 @@ class Generator(object):
 class Discriminator(object):
     def __init__(self, h, d, classes):
 
-        #         d_0 = Input(shape=(h, d, 1))
 
-        d_1 = Conv2D(128, (4, 4), strides=2, padding='same',
+
+        d_1 = Conv2D(64, (4, 4), strides=2, padding='same',
                      input_shape=(h, d, 1))
         d_2 = BatchNormalization()
-        d_3 = Activation(activation='relu')
-        d_4 = Conv2D(256, (4, 4), strides=2, padding='same')
+        d_3 = LeakyReLU(0.2)
+        d_4 = Conv2D(128, (4, 4), strides=2, padding='same')
         d_5 = BatchNormalization()
-        d_6 = Activation(activation='relu')
-        d_7 = Conv2D(512, (3, 3), strides=1, padding='valid')
+        d_6 = LeakyReLU(0.2)
+        d_7 = Conv2D(256, (3, 3), strides=1, padding='valid')
         d_8 = BatchNormalization()
-        d_9 = Activation(activation='relu')
-        d_10 = Conv2D(1024, (3, 3), strides=2, padding='valid')
+        d_9 = LeakyReLU(0.2)
+        d_10 = Conv2D(512, (3, 3), strides=2, padding='valid')
         d_11 = BatchNormalization()
-        d_12 = Activation(activation='relu')
+        d_12 = LeakyReLU(0.2)
         d_13 = Flatten()
         d_14 = Dense(100)
-        d_15 = Activation(activation='relu')
+        d_15 = LeakyReLU(0.2)
         d_16 = Dense(classes, activation='softmax')
 
 
@@ -124,9 +123,10 @@ class Discriminator(object):
 
 
 
-
+from keras.optimizers import Adam
 class GAN(object):
-    def __init__(self, w, d, classes,loss='categorical_crossentropy', optimizer='Adam', metrics=['accuracy']):
+    def __init__(self, w, d, classes,loss='categorical_crossentropy',
+                 optimizer=Adam(lr=0.0002,beta_1=0.5), metrics=['accuracy']):
         self.generator = Generator(w, d, classes)
         self.discriminator = Discriminator(w, d, classes + 1)
 
@@ -145,6 +145,7 @@ class GAN(object):
         self.discriminator_trainer.compile(loss=loss, optimizer=optimizer, metrics=metrics)
         self.generator.model.trainable = True
         self.discriminator.model.trainable = False
+
         self.generator_trainer = Model(inputs=[generated_data], outputs=[gen_out])
         self.generator_trainer.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
@@ -154,21 +155,26 @@ class GAN(object):
 
         samples = softmax_noise.shape[0]
         random = list(range(samples))
-        random = np.random.shuffle(random)
-        for i in range(samples):
+        np.random.shuffle(random)
+        for j in range(1):
+            for i in range(1000):
 
-            random_batch = random[i:(i + 1)]
-            random_batch_gen = random[i:(i + 1)]
+                random_batch = random[i:(i + 1)]
 
-            self.discriminator_trainer.train_on_batch(x=[softmax_noise[random_batch], actual_images[random_batch]],
-                                                       y=[discriminator_training_labels_oh[random_batch],
-                                                          training_labels_oh[random_batch]])
 
-            self.generator_trainer.train_on_batch(x=[softmax_noise[random_batch_gen]],
-                                                   y=[generator_training_labels_oh[random_batch_gen]])
-            if i % 1000 == 0:
-                print('iteration %s' % i)
-                self.get_generator_prediction(softmax_noise, np.random.randint(60000))
+                self.discriminator_trainer.train_on_batch(x=[softmax_noise[random_batch], actual_images[random_batch]],
+                                                           y=[discriminator_training_labels_oh[random_batch],
+                                                              training_labels_oh[random_batch]])
+
+                self.generator_trainer.train_on_batch(x=[softmax_noise[random_batch]],
+                                                       y=[generator_training_labels_oh[random_batch]])
+                if i % 1000 == 0:
+                    print('iteration %s of %s' % (i,j))
+                    print(self.discriminator_trainer.evaluate(x=[softmax_noise[:128], actual_images[:128]],
+                                                           y=[discriminator_training_labels_oh[:128],
+                                                              training_labels_oh[:128]]))
+
+                    self.get_generator_prediction(softmax_noise, np.random.randint(60000))
 
 
     def evaluate(self, test_images, test_labels_oh):
@@ -187,7 +193,7 @@ class GAN(object):
     def get_generator_prediction(self, noise, index):
 
         gen_image = self.generator.model.predict(x=noise[index:index + 1])
-        gen_image = mnist_data.X_denormalize(gen_image)
+
         labels = np.argmax(noise[index:index+1], axis=1).reshape(-1,1)
 
         get_prediction(self.discriminator, gen_image, labels, 0)
@@ -270,7 +276,8 @@ def get_prediction(discriminator, images, labels, index):
     Returns:
 
     '''
-    mnist_data.show_image(images=images, labels=labels, index=index)
+    denorm_images = mnist_data.X_denormalize(images)
+    mnist_data.show_image(images=denorm_images, labels=labels, index=index)
     pred = np.argmax(discriminator.model.predict(x=images[index:index + 1, :, :, :]), axis=1)[0]
     print('Prediction is %s' % pred)
 
@@ -295,6 +302,8 @@ def main():
 
     model.train(softmax_noise, discriminator_training_labels_oh,generator_training_labels_oh,
               training_images, training_labels_oh)
+
+    model.discriminator_trainer.save('/home/chidperi/Projects/mnist/gan_model.h5')
     return model, softmax_noise, generator_labels
 
 if __name__ == '__main__':
